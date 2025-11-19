@@ -228,7 +228,8 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin-bottom: 4px;
+      margin-top: 2px;
+      display: inline-block;
     }
   </style>
 </head>
@@ -441,8 +442,12 @@
           const tdTime = document.createElement("td");
           tdTime.className = "col-time";
           tdTime.innerHTML =
-            latest.time + "<br/><span class='group-label'>" + total +
-            " entr" + (total === 1 ? "y" : "ies") + "</span>";
+            latest.time +
+            "<br/><span class='group-label'>" +
+            total +
+            " entr" +
+            (total === 1 ? "y" : "ies") +
+            "</span>";
           tr.appendChild(tdTime);
 
           const tdUrl = document.createElement("td");
@@ -485,9 +490,7 @@
 
     downloadBtn.addEventListener("click", () => {
       if (!logs.length) return;
-      const rows = [
-        ["id", "time", "url", "keys", "timestamps"]
-      ];
+      const rows = [["id", "time", "url", "keys", "timestamps"]];
       logs.forEach(log => {
         rows.push([
           log.id,
@@ -500,9 +503,7 @@
       const csv = rows
         .map(r =>
           r
-            .map(v =>
-              '"' + String(v).replace(/"/g, '""') + '"'
-            )
+            .map(v => '"' + String(v).replace(/"/g, '""') + '"')
             .join(",")
         )
         .join("\n");
@@ -520,7 +521,7 @@
         String(now.getMinutes()).padStart(2, "0") +
         String(now.getSeconds()).padStart(2, "0");
       a.href = url;
-      a.download = "logs-"stamp + ".csv";
+      a.download = "logs-" + stamp + ".csv";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
