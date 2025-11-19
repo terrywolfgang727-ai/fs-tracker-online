@@ -5,49 +5,48 @@
   <title>Live Key Logs</title>
   <style>
     :root {
-      --bg: #0b0b0f;
-      --bg-alt: #111118;
-      --bg-row: #101018;
-      --bg-row-alt: #15151f;
+      --bg: #040506;
+      --bg-alt: #05070b;
+      --bg-row: #070a10;
+      --bg-row-alt: #0b0f18;
       --text: #e5e5e5;
-      --text-muted: #999;
-      --border: #222;
-      --accent: #4dabf7;
-      --accent-soft: #243b53;
-      --pill-bg: #222235;
-      --pill-border: #33334a;
-      --pill-special-bg: #3c2a4d;
+      --text-muted: #7f8c8d;
+      --border: #151822;
+      --accent: #26ff80;
+      --accent-soft: #0b3b23;
+      --pill-bg: #0f1722;
+      --pill-border: #1f2937;
+      --pill-special-bg: #251332;
       --pill-special-border: #c678dd;
-      --pill-space-bg: #243b53;
-      --pill-space-border: #4dabf7;
-      --shadow-dot: 0 0 8px #2ecc71;
+      --pill-space-bg: #0b3b23;
+      --pill-space-border: #26ff80;
+      --shadow-dot: 0 0 10px #26ff80;
     }
     body.light {
       --bg: #f4f5f8;
       --bg-alt: #ffffff;
       --bg-row: #ffffff;
-      --bg-row-alt: #f0f2f7;
-      --text: #151515;
-      --text-muted: #555;
-      --border: #d0d4e0;
-      --accent: #1d6fd8;
-      --accent-soft: #d7e3ff;
-      --pill-bg: #e6e8f5;
-      --pill-border: #c0c4e0;
+      --bg-row-alt: #eef1f7;
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #d1d5db;
+      --accent: #16a34a;
+      --accent-soft: #bbf7d0;
+      --pill-bg: #e5e7eb;
+      --pill-border: #cbd5f5;
       --pill-special-bg: #f3ddff;
       --pill-special-border: #c678dd;
-      --pill-space-bg: #d7e9ff;
-      --pill-space-border: #1d6fd8;
-      --shadow-dot: 0 0 4px #2ecc71;
+      --pill-space-bg: #bbf7d0;
+      --pill-space-border: #16a34a;
+      --shadow-dot: 0 0 4px #16a34a;
     }
     * {
       box-sizing: border-box;
     }
     body {
-      background: var(--bg);
+      background: radial-gradient(circle at top left, #071018 0, #020308 55%, #000000 100%);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
+      font-family: "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
       margin: 0;
       padding: 0;
     }
@@ -57,7 +56,8 @@
       justify-content: space-between;
       padding: 14px 20px;
       border-bottom: 1px solid var(--border);
-      background: var(--bg-alt);
+      background: rgba(5, 7, 11, 0.95);
+      backdrop-filter: blur(8px);
       position: sticky;
       top: 0;
       z-index: 10;
@@ -71,17 +71,19 @@
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      background: #2ecc71;
+      background: #26ff80;
       box-shadow: var(--shadow-dot);
     }
     h1 {
       font-size: 20px;
       margin: 0;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
     .subtitle {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
-      margin-top: 2px;
+      margin-top: 3px;
     }
     .controls {
       display: flex;
@@ -89,36 +91,41 @@
       gap: 10px;
       flex-wrap: wrap;
       justify-content: flex-end;
+      font-size: 12px;
     }
     .controls input {
       padding: 6px 10px;
-      border-radius: 6px;
+      border-radius: 4px;
       border: 1px solid var(--border);
-      background: var(--bg-row);
+      background: #020409;
       color: var(--text);
       min-width: 220px;
-      font-size: 13px;
+      font-size: 12px;
     }
     .controls input:focus {
       outline: none;
       border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(38, 255, 128, 0.4);
     }
     .btn {
       padding: 6px 10px;
-      border-radius: 6px;
+      border-radius: 4px;
       border: 1px solid var(--border);
-      background: var(--bg-row);
+      background: #05070b;
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
     .btn:hover {
       border-color: var(--accent);
+      color: var(--accent);
     }
     .btn-primary {
-      background: var(--accent);
-      color: #fff;
+      background: var(--accent-soft);
       border-color: var(--accent);
+      color: #ecfdf5;
     }
     .btn-primary:hover {
       filter: brightness(1.05);
@@ -127,7 +134,7 @@
       font-size: 11px;
       padding: 4px 8px;
       border-radius: 999px;
-      background: var(--bg-row);
+      background: #05070b;
       border: 1px solid var(--border);
       color: var(--text-muted);
       white-space: nowrap;
@@ -142,7 +149,7 @@
       font-size: 13px;
     }
     thead {
-      background: var(--bg-alt);
+      background: rgba(5,7,11,0.98);
       position: sticky;
       top: 56px;
       z-index: 5;
@@ -157,27 +164,28 @@
       text-align: left;
       font-weight: 600;
       color: var(--text-muted);
-      font-size: 12px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
     tbody tr:nth-child(even) {
-      background: var(--bg-row);
+      background: rgba(7, 10, 16, 0.9);
     }
     tbody tr:nth-child(odd) {
-      background: var(--bg-row-alt);
+      background: rgba(11, 15, 24, 0.9);
     }
     tbody tr:hover {
-      filter: brightness(1.05);
+      background: #050814;
     }
     .col-id {
-      width: 55px;
+      width: 60px;
       color: var(--text-muted);
       font-size: 11px;
     }
     .col-time {
-      width: 170px;
-      font-family: "JetBrains Mono", Consolas, monospace;
+      width: 180px;
       font-size: 11px;
-      color: var(--text);
+      color: #e5e7eb;
     }
     .col-url a {
       color: var(--accent);
@@ -189,7 +197,6 @@
       text-decoration: underline;
     }
     .col-keys {
-      font-family: "JetBrains Mono", Consolas, monospace;
       white-space: pre-wrap;
       word-break: break-word;
       font-size: 12px;
@@ -210,7 +217,7 @@
     .pill-space {
       background: var(--pill-space-bg);
       border-color: var(--pill-space-border);
-      color: #dbeafe;
+      color: #d1fae5;
     }
     .no-logs {
       text-align: center;
@@ -231,6 +238,13 @@
       margin-top: 2px;
       display: inline-block;
     }
+    .centrali {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #26ff80;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -240,7 +254,7 @@
       <div>
         <h1>Live Key Logs</h1>
         <div class="subtitle">
-          Realtime activity from your tracker script (newest on top)
+          realtime activity from your tracker script &mdash; newest on top
         </div>
       </div>
     </div>
@@ -250,7 +264,7 @@
         type="text"
         placeholder="Filter by URL or keys..."
       />
-      <button id="groupToggle" class="btn">Group by URL: OFF</button>
+      <button id="groupToggle" class="btn">Group by URL: ON</button>
       <button id="themeToggle" class="btn">Theme: Dark</button>
       <button id="downloadBtn" class="btn">Download CSV</button>
       <button id="clearBtn" class="btn">Clear</button>
@@ -277,9 +291,9 @@
 
     <div class="footer-note">
       • Logs are kept in memory (latest 1000 entries).<br />
-      • "Group by URL" shows one row per page with the latest keys and a
-      counter.<br />
+      • "Group by URL" shows one row per page, combining all keys for that page.<br />
       • Download CSV exports all logs currently in memory.
+      <div class="centrali">MadeByCentrali</div>
     </div>
   </main>
 
@@ -288,7 +302,7 @@
     let logs = [];
     let nextId = 1;
     let filterText = "";
-    let groupedMode = false;
+    let groupedMode = true; // default ON
     const MAX_LOGS = 1000;
 
     // ---------- DOM ----------
@@ -380,7 +394,7 @@
       }
 
       if (!groupedMode) {
-        // --- FLAT MODE ---
+        // --- FLAT MODE (each batch) ---
         filtered.forEach(log => {
           const tr = document.createElement("tr");
 
@@ -412,7 +426,7 @@
           logBody.appendChild(tr);
         });
       } else {
-        // --- GROUPED BY URL ---
+        // --- GROUPED BY URL (combine all keys per URL) ---
         const byUrl = new Map();
         filtered.forEach(log => {
           if (!byUrl.has(log.url)) {
@@ -431,6 +445,10 @@
         groups.forEach(([url, groupLogs]) => {
           const latest = groupLogs[0];
           const total = groupLogs.length;
+
+          // combine all keys from all logs for this URL
+          const combinedKeys = [];
+          groupLogs.forEach(l => combinedKeys.push(...l.keys));
 
           const tr = document.createElement("tr");
 
@@ -462,7 +480,7 @@
 
           const tdKeys = document.createElement("td");
           tdKeys.className = "col-keys";
-          latest.keys.forEach(k => tdKeys.appendChild(keyPillSpan(k)));
+          combinedKeys.forEach(k => tdKeys.appendChild(keyPillSpan(k)));
           tr.appendChild(tdKeys);
 
           logBody.appendChild(tr);
