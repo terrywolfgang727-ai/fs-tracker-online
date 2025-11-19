@@ -363,6 +363,17 @@
       }
       return span;
     }
+	
+    function formatKeysAsText(keysArr) {
+      return keysArr
+        .map(k => {
+          if (k === " ") return " ";                 // real space
+          const m = k.match(/^\[(.+)\]$/);           // special key like [Tab]
+          if (m) return " [" + m[1].toLowerCase() + "] ";
+          return k;
+        })
+        .join("");
+    }
 
     function matchesFilter(log) {
       if (!filterText) return true;
@@ -420,7 +431,7 @@
 
           const tdKeys = document.createElement("td");
           tdKeys.className = "col-keys";
-          log.keys.forEach(k => tdKeys.appendChild(keyPillSpan(k)));
+          tdKeys.textContent = formatKeysAsText(log.keys);
           tr.appendChild(tdKeys);
 
           logBody.appendChild(tr);
@@ -480,8 +491,9 @@
 
           const tdKeys = document.createElement("td");
           tdKeys.className = "col-keys";
-          combinedKeys.forEach(k => tdKeys.appendChild(keyPillSpan(k)));
+          tdKeys.textContent = formatKeysAsText(combinedKeys);
           tr.appendChild(tdKeys);
+
 
           logBody.appendChild(tr);
         });
