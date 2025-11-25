@@ -1,15 +1,18 @@
 {
   "name": "ghostkey-dashboard",
   "version": "1.0.0",
+  "description": "Live dashboard for GhostKey implants",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.1",
-    "sqlite3": "^5.1.7",
+    "express": "^4.19.2",
     "crypto-js": "^4.2.0",
-    "body-parser": "^1.20.3",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
