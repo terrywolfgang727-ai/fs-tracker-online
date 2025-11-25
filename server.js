@@ -34,11 +34,14 @@ app.get('/events', (req, res) => {
   });
 });
 
-function broadcast(data) {
+function broadcast(payload) {
+  const message = JSON.stringify(payload);  // ← stringify ONLY ONCE
   clients.forEach(client => {
     try {
-      client.write(`data: ${JSON.stringify(data)}\n\n`);
-    } catch (e) { /* ignore dead clients */ }
+      client.write(`data: ${message}\n\n`);  // ← EXACTLY this format
+    } catch (e) {
+      // dead client, ignore
+    }
   });
 }
 
