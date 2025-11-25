@@ -1,7 +1,6 @@
 {
   "name": "ghostkey-dashboard",
   "version": "1.0.0",
-  "description": "GhostKey C2 dashboard + native keylogger backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,8 +11,5 @@
     "crypto-js": "^4.2.0",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
