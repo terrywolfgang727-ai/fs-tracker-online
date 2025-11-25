@@ -42,18 +42,33 @@ function broadcast(data) {
   });
 }
 
-// Decrypt exactly like Go binary (AES-CBC + PKCS7 + IV prepended)
+// NEW WORKING decrypt() — supports Go's IV-prepended AES-CBC
 function decrypt(b64) {
   try {
-    const raw = CryptoJS.enc.Base64.parse(b64);
-    const iv = CryptoJS.enc.Base64.stringify(raw.clone().splice(0, 16));
-    const ciphertext = CryptoJS.enc.Base64.stringify(raw.clone().splice(16));
+    // Decode the full base64 (IV + ciphertext)
+    const data = CryptoJS.enc.Base64.parse(b64);
 
-    const decrypted = CryptoJS.AES.decrypt(ciphertext, CryptoJS.enc.Utf8.parse(AES_KEY), {
-      iv: CryptoJS.enc.Base64.parse(iv),
-      mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7
-    });
+    // Extract IV (first 16 bytes = 4 words)
+    const iv = data.clone();
+    iv.sigBytes = 16;
+    iv.clamp();
+
+    // Remove IV from the data
+    const ciphertext = data.clone();
+    ciphertext.words.splice(0, 4);           // remove first 4 words (16 bytes)
+    ciphertext.sigBytes -= 16;
+
+    // Decrypt
+    const decrypted = CryptoJS.AES.decrypt(
+      { ciphertext: ciphertext },
+      CryptoJS.enc.Utf8.parse(AES_KEY),   // key must be exactly 32 chars/bytes
+      {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }
+    );
+
     return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
   } catch (e) {
     console.log("Decrypt failed:", e.message);
