@@ -7,12 +7,13 @@ const sqlite3 = require('sqlite3').verbose();
 const CryptoJS = require('crypto-js');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path');           // ← NEW
-// ... rest of your requires
+const path = require('path');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const AES_KEY = "x93mK!qWeR7zL9p&2vN8bT5cY4fU6jH0";
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // ←←← ADD THESE 4 LINES HERE ←←←
 app.use(express.static(path.join(__dirname, 'public')));
