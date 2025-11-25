@@ -7,13 +7,20 @@ const sqlite3 = require('sqlite3').verbose();
 const CryptoJS = require('crypto-js');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path');
+const path = require('path');           // ← NEW
+// ... rest of your requires
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const AES_KEY = "x93mK!qWeR7zL9p&2vN8bT5cY4fU6jH0"; // ← MATCH YOUR GO BINARY'S KEY!
+const AES_KEY = "x93mK!qWeR7zL9p&2vN8bT5cY4fU6jH0";
 
-// Middleware
+// ←←← ADD THESE 4 LINES HERE ←←←
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+// ←←← END OF NEW LINES ←←←
+
 app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' })); // Handle big screenshot payloads
 app.use(express.static('public')); // Serve frontend files
